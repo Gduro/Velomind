@@ -1,117 +1,121 @@
-import type {Metadata, ResolvingMetadata} from 'next'
-import {notFound} from 'next/navigation'
-import {type PortableTextBlock} from 'next-sanity'
-import {Suspense} from 'react'
+import { client } from '@/sanity/lib/client'
+import { urlForImage } from '@/sanity/lib/utils' 
+import { PortableText } from '@portabletext/react'
+import Image from 'next/image'
+import { notFound } from 'next/navigation'
 
-import Avatar from '@/app/components/Avatar'
-import {MorePosts} from '@/app/components/Posts'
-import PortableText from '@/app/components/PortableText'
-import Image from '@/app/components/SanityImage'
-import {sanityFetch} from '@/sanity/lib/live'
-import {postPagesSlugs, postQuery} from '@/sanity/lib/queries'
-import {resolveOpenGraphImage} from '@/sanity/lib/utils'
+const ptComponents = {
+  types: {
+    image: ({ value }: any) => {
+      // Sprawdzamy, czy builder w ogóle istnieje
+      const imageUrl = urlForImage(value)?.width(1200).auto('format').url()
+      
+      if (!imageUrl) return null
 
-type Props = {
-  params: Promise<{slug: string}>
-}
-
-/**
- * Generate the static params for the page.
- * Learn more: https://nextjs.org/docs/app/api-reference/functions/generate-static-params
- */
-export async function generateStaticParams() {
-  const {data} = await sanityFetch({
-    query: postPagesSlugs,
-    // Use the published perspective in generateStaticParams
-    perspective: 'published',
-    stega: false,
-  })
-  return data
-}
-
-/**
- * Generate metadata for the page.
- * Learn more: https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function
- */
-export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
-  const params = await props.params
-  const {data: post} = await sanityFetch({
-    query: postQuery,
-    params,
-    // Metadata should never contain stega
-    stega: false,
-  })
-  const previousImages = (await parent).openGraph?.images || []
-  const ogImage = resolveOpenGraphImage(post?.coverImage)
-
-  return {
-    authors:
-      post?.author?.firstName && post?.author?.lastName
-        ? [{name: `${post.author.firstName} ${post.author.lastName}`}]
-        : [],
-    title: post?.title,
-    description: post?.excerpt,
-    openGraph: {
-      images: ogImage ? [ogImage, ...previousImages] : previousImages,
+      return (
+        <div className="my-10 overflow-hidden rounded-2xl border bg-slate-50">
+          <Image
+            src={imageUrl}
+            alt={value.alt || 'Zdjęcie w artykule'}
+            width={1200}
+            height={700}
+            className="w-full object-cover"
+          />
+          {value.alt && (
+            <p className="p-4 text-center text-sm text-slate-500 font-medium italic">
+              {value.alt}
+            </p>
+          )}
+        </div>
+      )
     },
-  } satisfies Metadata
+  },
 }
 
-export default async function PostPage(props: Props) {
-  const params = await props.params
-  const [{data: post}] = await Promise.all([sanityFetch({query: postQuery, params})])
+// Zmieniamy definicję typu params na Promise
+export default async function PostPage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // 1. Czekamy na rozwiązanie obietnicy parametrów
+  const { slug } = await params;
 
-  if (!post?._id) {
-    return notFound()
+  // 2. Teraz slug jest zwykłym stringiem, który możemy bezpiecznie przekazać
+  const post = await client.fetch(
+    `*[_type == "post" && slug.current == $slug][0]{
+      title,
+      category,
+      publishedAt,
+      mainImage,
+      body,
+      bikeDetails
+    }`,
+    { slug } // Przekazujemy wyciągnięty slug
+  )
+
+  if (!post) {
+    notFound()
   }
-
   return (
-    <>
-      <div className="">
-        <div className="container my-12 lg:my-24 grid gap-12">
-          <div>
-            <div className="pb-6 grid gap-6 mb-6 border-b border-gray-100">
-              <div className="max-w-3xl flex flex-col gap-6">
-                <h1 className="text-4xl text-gray-900 sm:text-5xl lg:text-7xl">{post.title}</h1>
-              </div>
-              <div className="max-w-3xl flex gap-4 items-center">
-                {post.author && post.author.firstName && post.author.lastName && (
-                  <Avatar person={post.author} date={post.date} />
-                )}
-              </div>
-            </div>
-            <article className="gap-6 grid max-w-4xl">
-              <div className="">
-                {post?.coverImage && (
-                  <Image
-                    id={post.coverImage.asset?._ref || ''}
-                    alt={post.coverImage.alt || ''}
-                    className="rounded-sm w-full"
-                    width={1024}
-                    height={538}
-                    mode="cover"
-                    hotspot={post.coverImage.hotspot}
-                    crop={post.coverImage.crop}
-                  />
-                )}
-              </div>
-              {post.content?.length && (
-                <PortableText
-                  className="max-w-2xl prose-headings:font-medium prose-headings:tracking-tight"
-                  value={post.content as PortableTextBlock[]}
-                />
-              )}
-            </article>
+    <article className="max-w-3xl mx-auto">
+      <header className="mb-12 text-center">
+        <div className="flex justify-center items-center gap-2 mb-4">
+          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
+            post.category === 'cycling' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'
+          }`}>
+            {post.category === 'cycling' ? '🚴 Rowery' : '🧠 Samorozwój'}
+          </span>
+          <time className="text-sm text-slate-400">
+            {new Date(post.publishedAt || Date.now()).toLocaleDateString('pl-PL')}
+          </time>
+        </div>
+        
+        <h1 className="text-4xl md:text-6xl font-black leading-tight text-slate-900 mb-6">
+          {post.title}
+        </h1>
+      </header>
+
+      {/* ZDJĘCIE GŁÓWNE - używamy urlForImage z ?. i .url() */}
+      {post.mainImage && (
+        <div className="relative aspect-video w-full mb-12 overflow-hidden rounded-3xl shadow-xl">
+          <Image
+            src={urlForImage(post.mainImage)?.width(1200).url() || ''}
+            alt={post.title}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+      )}
+
+      {post.category === 'cycling' && post.bikeDetails && (
+        <div className="mb-10 p-6 bg-slate-50 rounded-2xl border border-slate-100 flex flex-wrap gap-8 justify-center">
+          <div className="text-center">
+            <p className="text-xs uppercase text-slate-400 font-bold mb-1">Dystans</p>
+            <p className="text-2xl font-black text-slate-900">{post.bikeDetails.distance} <span className="text-sm font-normal">km</span></p>
+          </div>
+          <div className="text-center border-l border-slate-200 pl-8">
+            <p className="text-xs uppercase text-slate-400 font-bold mb-1">Maszyna</p>
+            <p className="text-2xl font-black text-slate-900">{post.bikeDetails.bikeModel}</p>
           </div>
         </div>
+      )}
+
+      <div className="prose prose-lg prose-slate max-w-none 
+        prose-headings:font-black prose-headings:text-slate-900
+        prose-p:leading-relaxed prose-p:text-slate-600
+        prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+        prose-strong:text-slate-900">
+        {/* Przekazujemy body do PortableText */}
+        <PortableText value={post.body} components={ptComponents} />
       </div>
-      <div className="border-t border-gray-100 bg-gray-50">
-        <div className="container py-12 lg:py-24 grid gap-12">
-          <aside>
-            <Suspense>{await MorePosts({skip: post._id, limit: 2})}</Suspense>
-          </aside>
-        </div>
+
+      <div className="mt-20 pt-10 border-t border-slate-100 text-center">
+        <a href="/" className="text-slate-900 font-bold hover:underline">
+          ← Wróć do wszystkich wpisów
+        </a>
       </div>
-    </>
+    </article>
   )
 }

@@ -1,8 +1,8 @@
-import type {Config} from 'tailwindcss'
+import type { Config } from 'tailwindcss'
 import typography from '@tailwindcss/typography'
 
 export default {
-  content: ['./app/**/*.{ts,tsx}', './sanity/**/*.{ts,tsx}'],
+  content: ['./src/app/**/*.{ts,tsx}', './src/components/**/*.{ts,tsx}', './sanity/**/*.{ts,tsx}'],
   theme: {
     container: {
       center: true,
@@ -10,94 +10,72 @@ export default {
     },
     extend: {
       boxShadow: {
-        layer: '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
+        // Zmiękczamy cień, aby pasował do naturalnego motywu
+        layer: '0 20px 50px -12px rgba(15, 23, 42, 0.1)', 
       },
       colors: {
-        black: '#0d0e12',
+        // Tło i tekst (Zen & Nature palette)
+        black: '#1c1d1a', // Bardzo ciemna zieleń/grafit zamiast czystej czerni
         white: '#fff',
-        cyan: {
-          50: '#e7fefe',
-          100: '#c5fcfc',
-          200: '#96f8f8',
-          300: '#62efef',
-          400: '#18e2e2',
-          500: '#04b8be',
-          600: '#037782',
-          700: '#024950',
-          800: '#042f34',
-          900: '#072227',
-          950: '#0d181c',
+        
+        // SAGE (Szałwia) - Twój nowy główny kolor akcentowy
+        sage: {
+          50: '#f4f7f4',
+          100: '#e7ede7',
+          200: '#d0ddd0',
+          300: '#adbfaa',
+          400: '#869e83',
+          500: '#667c64',
+          600: '#50634e',
+          700: '#415040', // Główny kolor dla "Rozwoju"
+          800: '#364135',
+          900: '#2d362c',
+          950: '#181d18',
         },
-        gray: {
-          50: '#f6f6f8',
-          100: '#eeeef1',
-          200: '#e3e4e8',
-          300: '#bbbdc9',
-          400: '#9499ad',
-          500: '#727892',
-          600: '#515870',
-          700: '#383d51',
-          800: '#252837',
-          900: '#1b1d27',
-          950: '#13141b',
+
+        // STONE (Beż/Kamień) - Idealne na tło strony
+        stone: {
+          50: '#fafaf9', // To będzie Twój główny kolor tła (bg-stone-50)
+          100: '#f5f5f4',
+          200: '#e7e5e4',
+          300: '#d6d3d1',
+          400: '#a8a29e',
+          500: '#78716c',
+          600: '#57534e',
+          700: '#44403c',
+          800: '#292524', // Kolor dla głównego tekstu
+          900: '#1c1917',
+          950: '#0c0a09',
         },
-        red: {
-          50: '#fff6f5',
-          100: '#ffe7e5',
-          200: '#ffdedc',
-          300: '#fdada5',
-          400: '#f77769',
-          500: '#ef4434',
-          600: '#cc2819',
-          700: '#8b2018',
-          800: '#4d1714',
-          900: '#321615',
-          950: '#1e1011',
-        },
-        orange: {
-          50: '#fcf1e8',
-          100: '#f9e3d2',
-          200: '#f4c7a6',
-          300: '#efab7a',
-          400: '#ea8f4e',
-          500: '#e57322',
-          600: '#ba5f1e',
-          700: '#8f4b1b',
-          800: '#653818',
-          900: '#3a2415',
-          950: '#251a13',
-        },
-        yellow: {
-          50: '#fefae1',
-          100: '#fcf3bb',
-          200: '#f9e994',
-          300: '#f7d455',
-          400: '#f9bc15',
-          500: '#d28a04',
-          600: '#965908',
-          700: '#653a0b',
-          800: '#3b220c',
-          900: '#271a11',
-          950: '#181410',
-        },
-        green: {
-          50: '#e7f9ed',
-          100: '#d0f4dc',
-          200: '#a1eaba',
-          300: '#72e097',
-          400: '#43d675',
-          500: '#3ab564',
-          600: '#329454',
-          700: '#297343',
-          800: '#215233',
-          900: '#183122',
-          950: '#14211a',
-        },
+
+        // ACCENT (Ziemista Pomarańcza) - Dla rowerów i ważnych akcji
+        brand: {
+          cycling: '#c2410c', // Ciepła terakota/pomarańcz
+          mindset: '#415040', // Szałwiowa zieleń
+        }
       },
       fontFamily: {
+        // Zachowujemy Twoje ustawienia fontów
         sans: ['var(--font-inter)'],
         mono: ['var(--font-ibm-plex-mono)'],
       },
+      // Dostosowanie Prose (Typography) do nowych kolorów
+      typography: (theme: any) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.stone.800'),
+            a: {
+              color: theme('colors.sage.700'),
+              '&:hover': {
+                color: theme('colors.sage.600'),
+              },
+            },
+            h1: { color: theme('colors.stone.900') },
+            h2: { color: theme('colors.stone.900') },
+            strong: { color: theme('colors.stone.900') },
+          },
+        },
+      }),
     },
   },
   future: {

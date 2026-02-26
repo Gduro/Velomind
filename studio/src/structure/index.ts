@@ -1,29 +1,53 @@
-import {CogIcon} from '@sanity/icons'
-import type {StructureBuilder, StructureResolver} from 'sanity/structure'
-import pluralize from 'pluralize-esm'
+import { CogIcon, UserIcon, DocumentsIcon } from '@sanity/icons'
+import type { StructureBuilder, StructureResolver } from 'sanity/structure'
 
-/**
- * Structure builder is useful whenever you want to control how documents are grouped and
- * listed in the studio or for adding additional in-studio previews or content to documents.
- * Learn more: https://www.sanity.io/docs/structure-builder-introduction
- */
-
-const DISABLED_TYPES = ['settings', 'assist.instruction.context']
+const DISABLED_TYPES = ['settings', 'aboutMe', 'post', 'assist.instruction.context']
 
 export const structure: StructureResolver = (S: StructureBuilder) =>
   S.list()
-    .title('Website Content')
+    .title('Zawartość')
     .items([
-      ...S.documentTypeListItems()
-        // Remove the "assist.instruction.context" and "settings" content  from the list of content types
-        .filter((listItem: any) => !DISABLED_TYPES.includes(listItem.getId()))
-        // Pluralize the title of each document type.  This is not required but just an option to consider.
-        .map((listItem) => {
-          return listItem.title(pluralize(listItem.getTitle() as string))
-        }),
-      // Settings Singleton in order to view/edit the one particular document for Settings.  Learn more about Singletons: https://www.sanity.io/docs/create-a-link-to-a-single-edit-page-in-your-main-document-type-list
+      // 1. SINGLETON: O MNIE
       S.listItem()
-        .title('Site Settings')
-        .child(S.document().schemaType('settings').documentId('siteSettings'))
-        .icon(CogIcon),
+        .title('Strona O mnie')
+        .icon(UserIcon)
+        .child(S.document().schemaType('aboutMe').documentId('aboutMe')),
+
+      S.divider(),
+
+      // 2. WPISY ROWEROWE
+      S.listItem()
+        .title('Wpisy: Rowery')
+        .icon(() => '🚴')
+        .child(
+          S.documentList()
+            .title('Artykuły Rowerowe')
+            .filter('_type == "post" && category == "cycling"')
+        ),
+
+      // 3. WPISY: ROZWÓJ
+      S.listItem()
+        .title('Wpisy: Rozwój')
+        .icon(() => '🧠')
+        .child(
+          S.documentList()
+            .title('Artykuły o Rozwoju')
+            .filter('_type == "post" && category == "mindset"')
+        ),
+
+      S.divider(),
+
+      // 4. WSZYSTKIE WPISY (Podgląd zbiorczy)
+      S.listItem()
+        .title('Wszystkie wpisy')
+        .icon(DocumentsIcon)
+        .child(S.documentTypeList('post').title('Wszystkie wpisy')),
+
+      S.divider(),
+
+      // 5. USTAWIENIA
+      S.listItem()
+        .title('Ustawienia strony')
+        .icon(CogIcon)
+        .child(S.document().schemaType('settings').documentId('siteSettings')),
     ])

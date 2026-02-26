@@ -1,7 +1,7 @@
-import {DocumentTextIcon} from '@sanity/icons'
-import {format, parseISO} from 'date-fns'
-import {defineField, defineType} from 'sanity'
-import type {Post} from '../../../sanity.types'
+import { DocumentTextIcon } from '@sanity/icons'
+import { format, parseISO } from 'date-fns'
+import { defineField, defineType } from 'sanity'
+import type { Post } from '../../../sanity.types'
 
 /**
  * Post schema.  Define and edit the fields for the 'post' content type.
@@ -10,96 +10,71 @@ import type {Post} from '../../../sanity.types'
 
 export const post = defineType({
   name: 'post',
-  title: 'Post',
-  icon: DocumentTextIcon,
+  title: 'Wpis',
   type: 'document',
   fields: [
     defineField({
       name: 'title',
-      title: 'Title',
+      title: 'Tytuł',
       type: 'string',
-      validation: (rule) => rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
-      description: 'A slug is required for the post to show up in the preview',
+      options: { source: 'title' },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'category',
+      title: 'Kategoria',
+      type: 'string',
       options: {
-        source: 'title',
-        maxLength: 96,
-        isUnique: (value, context) => context.defaultIsUnique(value, context),
+        list: [
+          { title: '🚴 Rower', value: 'cycling' },
+          { title: '🧠 Rozwój', value: 'mindset' },
+        ],
+        layout: 'radio', // Wyświetli się jako ładne kafelki do kliknięcia
       },
-      validation: (rule) => rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'content',
-      title: 'Content',
-      type: 'blockContent',
-    }),
-    defineField({
-      name: 'excerpt',
-      title: 'Excerpt',
-      type: 'text',
-    }),
-    defineField({
-      name: 'coverImage',
-      title: 'Cover Image',
+      name: 'mainImage',
+      title: 'Zdjęcie główne',
       type: 'image',
-      options: {
-        hotspot: true,
-        aiAssist: {
-          imageDescriptionField: 'alt',
-        },
-      },
-      fields: [
-        {
-          name: 'alt',
-          type: 'string',
-          title: 'Alternative text',
-          description: 'Important for SEO and accessibility.',
-          validation: (rule) => {
-            // Custom validation to ensure alt text is provided if the image is present. https://www.sanity.io/docs/validation
-            return rule.custom((alt, context) => {
-              const document = context.document as Post
-              if (document?.coverImage?.asset?._ref && !alt) {
-                return 'Required'
-              }
-              return true
-            })
-          },
-        },
-      ],
+      options: { hotspot: true },
     }),
     defineField({
-      name: 'date',
-      title: 'Date',
+      name: 'publishedAt',
+      title: 'Data publikacji',
       type: 'datetime',
       initialValue: () => new Date().toISOString(),
     }),
     defineField({
-      name: 'author',
-      title: 'Author',
-      type: 'reference',
-      to: [{type: 'person'}],
+      name: 'body',
+      title: 'Treść',
+      type: 'array',
+      of: [{ type: 'block' }, { type: 'image' }],
+    }),
+    defineField({
+      name: 'readingTime',
+      title: 'Czas czytania (minuty)',
+      type: 'number',
+      description: 'Wpisz szacowany czas czytania w minutach',
+      // Opcjonalnie: pokaż to pole głównie dla artykułów o rozwoju
+      initialValue: 5,
+    }),
+    // Opcjonalne pole tylko dla kategorii rowerowej
+    defineField({
+      name: 'bikeDetails',
+      title: 'Szczegóły wyprawy (Tylko dla Roweru)',
+      type: 'object',
+      hidden: ({ document }) => document?.category !== 'cycling', // Ukryte, jeśli kategoria to nie rower!
+      fields: [
+        { name: 'distance', title: 'Dystans (km)', type: 'number' },
+        { name: 'bikeModel', title: 'Model roweru', type: 'string' },
+      ],
     }),
   ],
-  // List preview configuration. https://www.sanity.io/docs/previews-list-views
-  preview: {
-    select: {
-      title: 'title',
-      authorFirstName: 'author.firstName',
-      authorLastName: 'author.lastName',
-      date: 'date',
-      media: 'coverImage',
-    },
-    prepare({title, media, authorFirstName, authorLastName, date}) {
-      const subtitles = [
-        authorFirstName && authorLastName && `by ${authorFirstName} ${authorLastName}`,
-        date && `on ${format(parseISO(date), 'LLL d, yyyy')}`,
-      ].filter(Boolean)
-
-      return {title, media, subtitle: subtitles.join(' ')}
-    },
-  },
 })

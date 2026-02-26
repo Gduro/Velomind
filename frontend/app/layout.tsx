@@ -1,94 +1,58 @@
-import './globals.css'
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import Link from "next/link";
+import { VisualEditing } from 'next-sanity/visual-editing';
+import { draftMode } from 'next/headers';
+import Navbar from "./components/Navbar";
+const inter = Inter({ subsets: ["latin"] });
 
-import {SpeedInsights} from '@vercel/speed-insights/next'
-import type {Metadata} from 'next'
-import {Inter, IBM_Plex_Mono} from 'next/font/google'
-import {draftMode} from 'next/headers'
-import {toPlainText} from 'next-sanity'
-import {VisualEditing} from 'next-sanity/visual-editing'
-import {Toaster} from 'sonner'
+export const metadata: Metadata = {
+  title: "Blog Mamy | Rowery & Samorozwój",
+  description: "Przestrzeń poświęcona pasji do dwóch kółek i ciągłemu doskonaleniu siebie.",
+};
 
-import DraftModeToast from '@/app/components/DraftModeToast'
-import Footer from '@/app/components/Footer'
-import Header from '@/app/components/Header'
-import * as demo from '@/sanity/lib/demo'
-import {sanityFetch, SanityLive} from '@/sanity/lib/live'
-import {settingsQuery} from '@/sanity/lib/queries'
-import {resolveOpenGraphImage} from '@/sanity/lib/utils'
-import {handleError} from '@/app/client-utils'
-
-/**
- * Generate metadata for the page.
- * Learn more: https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function
- */
-export async function generateMetadata(): Promise<Metadata> {
-  const {data: settings} = await sanityFetch({
-    query: settingsQuery,
-    // Metadata should never contain stega
-    stega: false,
-  })
-  const title = settings?.title || demo.title
-  const description = settings?.description || demo.description
-
-  const ogImage = resolveOpenGraphImage(settings?.ogImage)
-  let metadataBase: URL | undefined = undefined
-  try {
-    metadataBase = settings?.ogImage?.metadataBase
-      ? new URL(settings.ogImage.metadataBase)
-      : undefined
-  } catch {
-    // ignore
-  }
-  return {
-    metadataBase,
-    title: {
-      template: `%s | ${title}`,
-      default: title,
-    },
-    description: toPlainText(description),
-    openGraph: {
-      images: ogImage ? [ogImage] : [],
-    },
-  }
-}
-
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: '--font-ibm-plex-mono',
-  weight: ['400'],
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-export default async function RootLayout({children}: {children: React.ReactNode}) {
-  const {isEnabled: isDraftMode} = await draftMode()
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Sprawdzamy, czy tryb podglądu (Draft Mode) jest włączony
+  const isDraftMode = (await draftMode()).isEnabled;
 
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} bg-white text-black`}>
-      <body>
-        <section className="min-h-screen pt-24">
-          {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}
-          <Toaster />
-          {isDraftMode && (
-            <>
-              <DraftModeToast />
-              {/*  Enable Visual Editing, only to be rendered when Draft Mode is enabled */}
-              <VisualEditing />
-            </>
-          )}
-          {/* The <SanityLive> component is responsible for making all sanityFetch calls in your application live, so should always be rendered. */}
-          <SanityLive onError={handleError} />
-          <Header />
-          <main className="">{children}</main>
-          <Footer />
-        </section>
-        <SpeedInsights />
+    <html lang="pl">
+      {/* Zmieniamy bg-white na bg-stone-50, żeby pasowało do palety Zen */}
+      <body className={`${inter.className} antialiased bg-stone-50 text-stone-900`}>
+        {/* Visual Editing Toolbar - pojawi się tylko w trybie podglądu */}
+        {isDraftMode && <VisualEditing />}
+
+        <div className="flex flex-col min-h-screen">
+          {/* --- NAVBAR --- */}
+          <Navbar/>
+
+          {/* --- MAIN CONTENT --- */}
+          {/* Usunąłem bg-white stąd, żeby tło stone-50 z body prześwitywało wszędzie */}
+          <main className="flex-grow">
+            {children}
+          </main>
+
+          {/* --- FOOTER --- */}
+          <footer className="border-t border-stone-200 py-12 bg-stone-100/50">
+            <div className="container mx-auto px-4 text-center">
+              <p className="text-sm font-bold text-stone-900">
+                BLOG<span className="text-sage-700">MAMY</span>
+              </p>
+              <p className="text-xs text-stone-500 mt-2 italic">
+                Z pasji do rowerów i rozwoju.
+              </p>
+              <p className="text-[10px] text-stone-400 mt-8 uppercase tracking-widest">
+                © {new Date().getFullYear()} — Built with Next.js & Sanity
+              </p>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
-  )
+  );
 }
