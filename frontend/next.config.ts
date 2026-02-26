@@ -14,18 +14,13 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            // Dodajemy konkretny adres Twojego studia, bez gwiazdek, żeby nie było wątpliwości
-            value: "frame-ancestors 'self' https://velomind-admin.sanity.studio http://localhost:3333 https://*.sanity.studio",
+            // Dodajemy *.sanity.io oraz *.sanity.studio - to pokrywa wszystkie opcje
+            value: "frame-ancestors 'self' https://*.sanity.studio https://*.sanity.io http://localhost:3333 http://localhost:3000",
           },
           {
             key: "X-Frame-Options",
-            // Usuwamy to całkowicie, bo gryzie się z CSP
-            value: "ALLOWALL", 
+            value: "ALLOWALL",
           },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*", // Tymczasowo pozwalamy na wszystko, żeby wykluczyć błąd CORS
-          }
         ],
       },
     ];
