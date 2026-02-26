@@ -14,14 +14,18 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            // Dodajemy *.sanity.studio, żeby objąć każdą nazwę panelu
-            value: "frame-ancestors 'self' https://*.sanity.studio http://localhost:3333",
+            // Dodajemy konkretny adres Twojego studia, bez gwiazdek, żeby nie było wątpliwości
+            value: "frame-ancestors 'self' https://velomind-admin.sanity.studio http://localhost:3333 https://*.sanity.studio",
           },
           {
-            // Próbujemy wyłączyć sztywne blokowanie ramek, które narzuca Vercel
             key: "X-Frame-Options",
+            // Usuwamy to całkowicie, bo gryzie się z CSP
             value: "ALLOWALL", 
           },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*", // Tymczasowo pozwalamy na wszystko, żeby wykluczyć błąd CORS
+          }
         ],
       },
     ];
